@@ -2,6 +2,7 @@ import { PluginBase } from '../base.js';
 import { ACCENT_COLOR, TEXT_COLOR } from '../../services/theme.js';
 import { layoutState } from '../../services/layout.js';
 import { setCanvasFont } from '../../services/theme.js';
+import { registerPlugin, setPluginHelpText } from '../registry.js';
 
 export class TodoPlugin extends PluginBase {
   constructor(id, title, x = 10, y = 10, width = 200, height = 150) {
@@ -132,4 +133,16 @@ export class TodoPlugin extends PluginBase {
     return false;
   }
 }
+
+// Self-register in central registry
+registerPlugin('todo', TodoPlugin);
+setPluginHelpText(
+  'todo',
+  [
+    'add-todo <id|name> <task>         Add a new task',
+    'remove-todo <id|name> <index>     Remove a task by its index',
+    'list-todos <id|name>              List all tasks',
+    'toggle-todo <id|name> <index>     Toggle completion state of a task',
+  ].join('\n')
+);
 

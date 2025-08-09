@@ -1,10 +1,10 @@
 import { store } from './store.js';
 import { renderFrame } from './renderer.js';
 import { attachInputHandlers } from './input.js';
-import { TodoPlugin } from '../plugins/todo/todo.js';
-import { ClockPlugin } from '../plugins/clock/clock.js';
 import { updatePluginCommands } from './commands.js';
 import { loadFromLocalStorage, saveToLocalStorage, serializeDashboard } from '../services/persistence.js';
+import '../plugins/index.js';
+import { getPluginConstructor } from '../plugins/index.js';
 
 const canvas = document.getElementById('dashboard');
 
@@ -16,8 +16,10 @@ setInterval(() => {
 // initial plugins or load from local storage
 const restored = loadFromLocalStorage();
 if (!restored) {
-  store.plugins.push(new TodoPlugin(0, 'Tasks', 10, 10, 200, 150));
-  store.plugins.push(new ClockPlugin(1, 'Clock', 220, 10, 200, 100));
+  const TodoCtor = getPluginConstructor('todo');
+  const ClockCtor = getPluginConstructor('clock');
+  if (TodoCtor) store.plugins.push(new TodoCtor(0, 'Tasks', 10, 10, 200, 150));
+  if (ClockCtor) store.plugins.push(new ClockCtor(1, 'Clock', 220, 10, 200, 100));
 }
 updatePluginCommands();
 

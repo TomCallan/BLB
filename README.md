@@ -1,4 +1,4 @@
-## DashPHP Module Development Guide
+## BLB Module Development Guide
 
 This guide explains how to build, wire, and ship new modules ("plugins") for the dashboard.
 
@@ -50,16 +50,35 @@ State is auto-saved via `serializeDashboard()` in `src/services/persistence.js`.
 - Anything under `plugin.state` is persisted.
 - If you implement `update(data)`, it will be called with hydrated state during load so you can derive fields.
 
-### Wiring a new module type
-To make your new type creatable and loadable:
-1) Implement your class in `src/plugins/<type>/<type>.js` and export it
-2) Register for persistence in `src/services/persistence.js`:
-   - Import your class
-   - In `createPluginFromSerialized`, add a branch for your `type` that `new`s your class
-3) Allow creating via core `add` command in `src/core/core-commands.js`:
-   - Add a branch in `add` for your `type` that constructs your plugin
-   - Optionally add help text for your module under the `help` command
-4) (Optional) Add a default instance in `src/core/app.js` if you want it on first run
+ ### Registry and auto-loading
+ The system uses a central registry with self-registration and a manifest to auto-load plugins at startup:
+ - `src/plugins/registry.js`: provides `registerPlugin(type, Ctor, options)` and help text helpers
+ - `src/plugins/manifest.js`: a list of plugin module paths to import
+ - `src/plugins/index.js`: imports all modules from the manifest (side effects), then re-exports the registry helpers
+
+ You do not need to modify persistence or core commands when adding a new plugin.
+ They resolve constructors and help text dynamically via the registry.
+
+ ### Wiring a new module type
+ 1) Implement your class file, e.g. `src/plugins/weather.js` or `src/plugins/weather/weather.js`
+ 2) At the bottom of your plugin file, self-register it:
+    ```js
+    import { registerPlugin, setPluginHelpText } from '../registry.js'; // adjust path if flat file
+    registerPlugin('weather', WeatherPlugin);
+    setPluginHelpText('weather', [
+      'weather-set-city <id|name> <city>',
+      'weather-info <id|name>',
+    ].join('\n'));
+    ```
+ 3) Add the module path once to `src/plugins/manifest.js` so it auto-loads:
+    ```js
+    export const pluginModules = [
+      './todo/todo.js',
+      './clock/clock.js',
+      './weather.js', // <- add your plugin here
+    ];
+    ```
+ 4) (Optional) Add a default instance in `src/core/app.js` by calling `getPluginConstructor('weather')`
 
 ### Example: skeleton plugin
 ```js
@@ -109,13 +128,7 @@ export class WeatherPlugin extends PluginBase {
 }
 ```
 
-Then wire it up:
-- In `src/services/persistence.js`
-  - `import { WeatherPlugin } from '../plugins/weather/weather.js'`
-  - In `createPluginFromSerialized`: `else if (type === 'weather') pluginInstance = new WeatherPlugin(id, title, x, y, width, height);`
-- In `src/core/core-commands.js`
-  - In `add`: `else if (type === 'weather') plugin = new WeatherPlugin(store.plugins.length, title);`
-  - In `help`: add a `weather` section with your commands if desired
+ With the registry + manifest, no changes to persistence or core commands are necessary.
 
 ### Terminal and core commands quickref
 - **Toggle terminal**: `/`

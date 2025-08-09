@@ -2,6 +2,7 @@ import { PluginBase } from '../base.js';
 import { TEXT_COLOR, ACCENT_COLOR } from '../../services/theme.js';
 import { layoutState } from '../../services/layout.js';
 import { setCanvasFont } from '../../services/theme.js';
+import { registerPlugin, setPluginHelpText } from '../registry.js';
 
 export class ClockPlugin extends PluginBase {
   constructor(id, title = 'Clock', x = 10, y = 10, width = 200, height = 100) {
@@ -20,8 +21,7 @@ export class ClockPlugin extends PluginBase {
   }
 
   drawContent(ctx) {
-    ctx.fillStyle = TEXT_COLO
-    R;
+    ctx.fillStyle = TEXT_COLOR;
     setCanvasFont(ctx, layoutState.isCompact);
     const now = new Date();
     const hours = now.getHours();
@@ -43,4 +43,6 @@ export class ClockPlugin extends PluginBase {
   }
 }
 
-
+// Self-register in central registry
+registerPlugin('clock', ClockPlugin);
+setPluginHelpText('clock', ['clock-format <id|name> [12|24]    Get or set time format (12|24)'].join('\n'));

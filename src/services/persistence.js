@@ -1,7 +1,7 @@
 import { store } from '../core/store.js';
 import { layoutState, getGridSize, setGridSize } from './layout.js';
-import { TodoPlugin } from '../plugins/todo/todo.js';
-import { ClockPlugin } from '../plugins/clock/clock.js';
+import '../plugins/index.js';
+import { getPluginConstructor } from '../plugins/index.js';
 
 const LOCAL_STORAGE_KEY = 'dashphp_state_v1';
 
@@ -30,12 +30,8 @@ export function serializeDashboard() {
 
 function createPluginFromSerialized(p) {
   const { id, type, title, x, y, width, height, state } = p;
-  let pluginInstance = null;
-  if (type === 'todo') {
-    pluginInstance = new TodoPlugin(id, title, x, y, width, height);
-  } else if (type === 'clock') {
-    pluginInstance = new ClockPlugin(id, title, x, y, width, height);
-  }
+  const Ctor = getPluginConstructor(type);
+  const pluginInstance = Ctor ? new Ctor(id, title, x, y, width, height) : null;
   if (!pluginInstance) return null;
   // Apply state
   try {

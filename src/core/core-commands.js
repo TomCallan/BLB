@@ -1,9 +1,9 @@
 import { store } from './store.js';
 import { layoutState, calculateTerminalMetrics, setGridSize, toggleCompact, getGridSize } from '../services/layout.js';
 import { updatePluginCommands } from './commands.js';
-import { TodoPlugin } from '../plugins/todo/todo.js';
 import { applyDashboard, serializeDashboard } from '../services/persistence.js';
-import { ClockPlugin } from '../plugins/clock/clock.js';
+import '../plugins/index.js';
+import { getPluginConstructor, getPluginHelpText, getRegisteredPluginTypes } from '../plugins/index.js';
 
 export const coreCommands = {
   help: (args) => {
@@ -14,20 +14,7 @@ export const coreCommands = {
       return `${core}\n\n${modulesList}`;
     }
     const pluginType = args[0].toLowerCase();
-    if (pluginType === 'todo') {
-      return [
-        'add-todo <id|name> <task>         Add a new task to a Todo plugin',
-        'remove-todo <id|name> <index>     Remove a task by its index',
-        'list-todos <id|name>              List all tasks',
-        'toggle-todo <id|name> <index>     Toggle completion state of a task by its index',
-      ].join('\n');
-    }
-    if (pluginType === 'clock') {
-      return [
-        'clock-format <id|name> [12|24]    Get or set time format (12|24)',
-      ].join('\n');
-    }
-    return `No module commands for type ${pluginType}`;
+    return getPluginHelpText(pluginType) || `No module commands for type ${pluginType}`;
   },
   settings: (args) => {
     const sub = (args[0] || '').toLowerCase();
@@ -83,10 +70,9 @@ export const coreCommands = {
   add: (args) => {
     const type = args[0] || 'todo';
     const title = args.slice(1).join(' ') || `Plugin ${store.plugins.length + 1}`;
-    let plugin = null;
-    if (type === 'todo') plugin = new TodoPlugin(store.plugins.length, title);
-    else if (type === 'clock') plugin = new ClockPlugin(store.plugins.length, title || 'Clock');
-    else return `Unknown module type: ${type}`;
+    const Ctor = getPluginConstructor(type);
+    if (!Ctor) return `Unknown module type: ${type}`;
+    const plugin = new Ctor(store.plugins.length, title);
     store.plugins.push(plugin);
     updatePluginCommands();
     return `Added ${type} plugin: ${title}`;
